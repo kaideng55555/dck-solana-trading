@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: dck-solana-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: QUICKNODE_HTTP
+        sync: false
+      - key: QUICKNODE_WSS
+        sync: false

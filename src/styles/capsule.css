@@ -1,0 +1,92 @@
+:root{
+  --bg:#090a10;
+  --panel:#0f1120;
+  --text:#e8ecff;
+  --muted:#9aa3c7;
+  --neon-blue:#00bfff;
+  --neon-blue-soft: rgba(0,191,255,0.35);
+  --neon-pink:#ff0080;
+  --neon-pink-soft: rgba(255,0,128,0.35);
+}
+
+.capsule-stage-wrap{ max-width:1100px; margin:24px auto; padding:0 16px; color:var(--text); }
+.capsule-stage{
+  position:relative; aspect-ratio: 11/6; width:100%;
+  border-radius:20px; overflow:hidden;
+  background: radial-gradient(600px 300px at 50% 100%, rgba(53,184,255,0.08), rgba(255,255,255,0.02) 60%), var(--panel);
+  outline:1px solid rgba(255,255,255,0.05);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.45), inset 0 0 60px rgba(53,184,255,0.05);
+}
+#smokeCanvas{
+  position:absolute; inset:0; width:100%; height:100%;
+  filter: blur(0.5px) saturate(110%); mix-blend-mode: screen;
+}
+
+/* Capsule */
+.capsule{
+  position:absolute; left:50%; bottom:6%; width:320px; height:360px;
+  transform: translateX(-50%); display:grid; place-items:center;
+  filter: drop-shadow(0 10px 40px rgba(53,184,255,0.25));
+}
+.cap{
+  position:absolute; left:50%; width:360px; height:120px; transform: translateX(-50%);
+  background:
+    radial-gradient(180px 90px at 50% 50%, rgba(255,255,255,0.08), transparent 70%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border:1px solid rgba(255,255,255,0.1);
+  box-shadow: inset 0 0 30px rgba(53,184,255,0.25), 0 0 40px rgba(53,184,255,0.15);
+  border-radius: 999px; 
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.cap.top{ top:0 } .cap.bottom{ bottom:0 }
+
+/* Chamber */
+.chamber{
+  position:absolute; top:60px; bottom:60px; left:50%; width: 220px; transform: translateX(-50%);
+  border-radius: 120px;
+  background:
+    radial-gradient(120px 240px at 50% 50%, rgba(53,184,255,0.06), transparent 65%),
+    linear-gradient(180deg, rgba(255,61,184,0.08), rgba(53,184,255,0.08));
+  border:1px solid rgba(255,255,255,0.06);
+  box-shadow: inset 0 0 60px rgba(53,184,255,0.22), 0 0 60px rgba(53,184,255,0.12);
+}
+
+/* NFT card */
+.nft-card{
+  position:absolute; bottom:80px; left:50%; transform: translateX(-50%) translateY(60px) scale(.98);
+  width: 180px; height: 240px; border-radius: 16px;
+  background:
+    radial-gradient(160px 90px at 50% 10%, rgba(255,61,184,0.25), transparent 70%),
+    linear-gradient(180deg, #1b1f37, #131629);
+  border:1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 0 18px var(--neon-pink-soft), inset 0 0 40px rgba(255,61,184,0.25);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0;
+}
+.nft-glow{ position:absolute; inset:-12px; border-radius:20px;
+  box-shadow: 0 0 30px var(--neon-pink-soft), inset 0 0 30px var(--neon-pink-soft); pointer-events:none; }
+.nft-title{ font-weight:700; letter-spacing:1px; margin-bottom:6px; color:#fff }
+.nft-sub{ font-size:12px; color:var(--muted) }
+
+/* Animations */
+.capsule.open .cap.top{ animation: openTop 1.2s ease forwards }
+.capsule.open .cap.bottom{ animation: openBottom 1.2s ease forwards }
+.capsule.open .nft-card{ animation: riseNFT 1.4s ease .4s forwards }
+
+@keyframes openTop{
+  0%{ transform:translateX(-50%) translateY(0) rotate(0deg); opacity:1 }
+  60%{ transform:translateX(-50%) translateY(-40px) rotate(-6deg) }
+  100%{ transform:translateX(-50%) translateY(-120px) rotate(-12deg); opacity:.9 }
+}
+@keyframes openBottom{
+  0%{ transform:translateX(-50%) translateY(0) rotate(0deg); opacity:1 }
+  60%{ transform:translateX(-50%) translateY(40px) rotate(6deg) }
+  100%{ transform:translateX(-50%) translateY(120px) rotate(12deg); opacity:.9 }
+}
+@keyframes riseNFT{
+  0%{ opacity:0; transform: translateX(-50%) translateY(60px) scale(.98) }
+  60%{ opacity:1; transform: translateX(-50%) translateY(-10px) scale(1.02) }
+  100%{ opacity:1; transform: translateX(-50%) translateY(-40px) scale(1.0) }
+}
+
+.capsule-controls{ display:flex; gap:18px; align-items:center; color:var(--muted); margin-top:12px }

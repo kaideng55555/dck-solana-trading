@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DCK$ TOOLS – Live Trading Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{ 
+      --bg:#0a0a0a; 
+      --panel:#1a1a1a; 
+      --text:#ffffff; 
+      --muted:#cccccc; 
+      --line:#00ffff; 
+      --bar:#ff00ff; 
+      --accent:#ff0080;
+    }
+    body{ 
+      margin:0; 
+      background:var(--bg); 
+      color:var(--text); 
+      font:14px/1.4 'Courier New', monospace; 
+    }
+    .wrap{ max-width:1200px; margin:24px auto; padding:0 16px; }
+    .card{ 
+      background:linear-gradient(135deg, rgba(0, 10, 25, 0.9), rgba(10, 0, 20, 0.8));
+      border:1px solid var(--line); 
+      border-radius:15px; 
+      padding:20px;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
+      position: relative;
+      backdrop-filter: blur(10px);
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+      animation: scan 3s infinite;
+    }
+    @keyframes scan {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    .row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .grow{ flex:1; }
+    input,select,button{ 
+      background:rgba(0, 5, 15, 0.8); 
+      color:var(--line); 
+      border:1px solid var(--line); 
+      border-radius:8px; 
+      padding:10px 12px;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+    }
+    button{ 
+      background:linear-gradient(135deg, var(--line), var(--bar));
+      color:#000000;
+      font-weight:900; 
+      cursor:pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 255, 255, 0.4);
+      color: #ffffff;
+    }
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s ease;
+    }
+    button:hover::before {
+      left: 100%;
+    }
+    .muted{ color:var(--muted) }
+    .status-dot{ 
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      display:inline-block;
+      margin-right:8px;
+      background:#777;
+      vertical-align:middle;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .ok{ background:#00ff80; box-shadow: 0 0 15px #00ff80 } 
+    .warn{ background:#ffaa00; box-shadow: 0 0 15px #ffaa00 } 
+    .bad{ background:#ff4080; box-shadow: 0 0 15px #ff4080 }
+    canvas{ 
+      background:#0f1322; 
+      border-radius:12px; 
+      border: 1px solid rgba(0, 255, 255, 0.2);
+    }
+    .grid{ display:grid; grid-template-columns: 2fr 1fr; gap:16px; }
+    @media (max-width:900px){ .grid{ grid-template-columns:1fr } }
+    a{ color:var(--line); text-decoration:none; text-shadow: 0 0 5px var(--line) }
+    .dck-title {
+      font-size: 24px;
+      font-weight: 900;
+      background: linear-gradient(45deg, var(--line), var(--bar));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px var(--line);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .neon-text {
+      text-shadow: 0 0 10px currentColor;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--bar);
+      box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+    }
+    .audit-log {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      border-radius: 10px;
+      padding: 15px;
+      max-height: 220px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="row" style="margin-bottom:20px">
+      <div class="dck-title">DCK$ TOOLS — Live Trading Dashboard</div>
+      <div class="grow"></div>
+      <div class="muted">Backend: <code>http://localhost:8000</code></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="row">
+        <label class="neon-text">Token
+          <input id="token" value="DCK" style="margin-left:6px;width:120px" />
+        </label>
+        <label class="neon-text">WS interval (s)
+          <select id="interval" style="margin-left:6px">
+            <option>5</option><option>3</option><option selected>1</option>
+          </select>
+        </label>
+        <button id="connect">🚀 Connect</button>
+        <button id="disconnect">⏹️ Disconnect</button>
+        <div class="grow"></div>
+        <div class="muted"><span id="dot" class="status-dot"></span><span id="status">disconnected</span></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="row" style="margin-bottom:12px">
+          <b class="neon-text">💰 Price Chart (SOL)</b>
+          <div class="grow"></div>
+          <span class="muted" id="lastPrice">—</span>
+        </div>
+        <canvas id="price" height="280"></canvas>
+      </div>
+      <div class="card">
+        <div class="row" style="margin-bottom:12px">
+          <b class="neon-text">📊 Volume Bars</b>
+          <div class="grow"></div>
+          <span class="muted" id="lastVol">—</span>
+        </div>
+        <canvas id="vol" height="280"></canvas>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="row" style="margin-bottom:12px">
+        <b class="neon-text">🔍 Trading Audit Log</b>
+        <div class="grow"></div>
+        <button id="refreshAudit">🔄 Refresh</button>
+      </div>
+      <div id="audit" class="audit-log"></div>
+    </div>
+
+    <p class="muted" style="margin-top:16px">
+      <span class="neon-text">💡 Tip:</span> Change the token symbol and hit <b>🚀 Connect</b> — the backend will spawn a live stream for that token.
+      Historical data from <code>/api/metrics?token=...</code>, live ticks via <code>/ws/ticks</code> WebSocket.
+    </p>
+  </div>
+
+<script>
+(() => {
+  const HTTP = 'http://localhost:8000';
+  const tokenEl = document.getElementById('token');
+  const intervalEl = document.getElementById('interval');
+  const statusEl = document.getElementById('status');
+  const dotEl = document.getElementById('dot');
+  const lastPriceEl = document.getElementById('lastPrice');
+  const lastVolEl = document.getElementById('lastVol');
+  const auditEl = document.getElementById('audit');
+
+  let ws = null;
+
+  // --- DCK Themed Charts ---
+  Chart.defaults.color = '#cccccc';
+  Chart.defaults.borderColor = 'rgba(0, 255, 255, 0.1)';
+
+  const priceCtx = document.getElementById('price');
+  const volCtx = document.getElementById('vol');
+
+  const priceChart = new Chart(priceCtx, {
+    type: 'line',
+    data: { 
+      labels: [], 
+      datasets: [{ 
+        label: 'Price (SOL)', 
+        data: [], 
+        borderColor: '#00ffff',
+        backgroundColor: 'rgba(0, 255, 255, 0.1)',
+        borderWidth: 3, 
+        tension: .3,
+        pointBackgroundColor: '#00ffff',
+        pointBorderColor: '#ffffff',
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      animation: { duration: 200 },
+      interaction: { intersect: false },
+      scales: {
+        x: { 
+          ticks: { color: '#cccccc', maxTicksLimit: 8 }, 
+          grid: { color: 'rgba(0, 255, 255, 0.1)'} 
+        },
+        y: { 
+          ticks: { color: '#cccccc' }, 
+          grid: { color: 'rgba(0, 255, 255, 0.1)'} 
+        }
+      },
+      plugins: { 
+        legend: { 
+          display: true,
+          labels: { color: '#00ffff' }
+        } 
+      }
+    }
+  });
+
+  const volChart = new Chart(volCtx, {
+    type: 'bar',
+    data: { 
+      labels: [], 
+      datasets: [{ 
+        label: 'Volume', 
+        data: [], 
+        backgroundColor: '#ff00ff',
+        borderColor: '#ff00ff',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      animation: { duration: 200 },
+      scales: {
+        x: { 
+          ticks: { color: '#cccccc', maxTicksLimit: 8 }, 
+          grid: { display:false } 
+        },
+        y: { 
+          ticks: { color: '#cccccc' }, 
+          grid: { color: 'rgba(255, 0, 255, 0.1)' } 
+        }
+      },
+      plugins: { 
+        legend: { 
+          display: true,
+          labels: { color: '#ff00ff' }
+        } 
+      }
+    }
+  });
+
+  function fmtTime(ms){ 
+    const d = new Date(ms); 
+    return d.toLocaleTimeString(); 
+  }
+
+  function setConnected(ok){
+    statusEl.textContent = ok ? 'connected' : 'disconnected';
+    dotEl.classList.remove('ok','bad');
+    dotEl.classList.add(ok ? 'ok' : 'bad');
+  }
+
+  async function loadHistory(token){
+    try {
+      const url = `${HTTP}/api/metrics?token=${encodeURIComponent(token)}`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('metrics HTTP failed');
+      const json = await r.json();
+
+      priceChart.data.labels = json.price.map(x=>fmtTime(x.t));
+      priceChart.data.datasets[0].data = json.price.map(x=>x.p);
+      priceChart.update();
+
+      volChart.data.labels = json.volume.map(x=>fmtTime(x.t));
+      volChart.data.datasets[0].data = json.volume.map(x=>x.v);
+      volChart.update();
+
+      if (json.price.length) lastPriceEl.textContent = `💰 ${json.price.at(-1).p} SOL`;
+      if (json.volume.length) lastVolEl.textContent = `📊 ${Math.round(json.volume.at(-1).v)}`;
+    } catch (e) {
+      console.error('Failed to load history:', e);
+      auditEl.textContent = `❌ Failed to load history: ${e.message}`;
+    }
+  }
+
+  function connectWS(token, interval){
+    if (ws) { try{ ws.close(); }catch{} ws=null; }
+    const url = `ws://localhost:8000/ws/ticks?token=${encodeURIComponent(token)}&interval=${interval}`;
+    ws = new WebSocket(url);
+    
+    ws.onopen = () => {
+      setConnected(true);
+      console.log('🚀 WebSocket connected for token:', token);
+    };
+    
+    ws.onclose = () => {
+      setConnected(false);
+      console.log('⏹️ WebSocket disconnected');
+    };
+    
+    ws.onerror = (err) => {
+      setConnected(false);
+      console.error('❌ WebSocket error:', err);
+    };
+    
+    ws.onmessage = (evt) => {
+      try {
+        const { t, p, v } = JSON.parse(evt.data);
+        
+        // Update price chart
+        priceChart.data.labels.push(fmtTime(t));
+        priceChart.data.datasets[0].data.push(p);
+        if (priceChart.data.labels.length > 200) { 
+          priceChart.data.labels.shift(); 
+          priceChart.data.datasets[0].data.shift(); 
+        }
+        priceChart.update();
+
+        // Update volume chart
+        volChart.data.labels.push(fmtTime(t));
+        volChart.data.datasets[0].data.push(v);
+        if (volChart.data.labels.length > 200) { 
+          volChart.data.labels.shift(); 
+          volChart.data.datasets[0].data.shift(); 
+        }
+        volChart.update();
+
+        // Update last values
+        lastPriceEl.textContent = `💰 ${p} SOL`;
+        lastVolEl.textContent = `📊 ${Math.round(v)}`;
+        
+      } catch (e) {
+        console.error('Failed to parse WebSocket message:', e);
+      }
+    };
+  }
+
+  async function refreshAudit(){
+    try {
+      const r = await fetch(`${HTTP}/api/audit`);
+      const list = await r.json();
+      auditEl.textContent = list.map(x => {
+        const t = new Date(x.ts).toLocaleTimeString();
+        const emoji = x.level === 'info' ? '🔵' : x.level === 'warn' ? '🟡' : '🔴';
+        return `${emoji} [${t}] ${x.level.toUpperCase()} ${x.message}`;
+      }).join('\n');
+    } catch (e) {
+      auditEl.textContent = `❌ Failed to load audit log: ${e.message}`;
+    }
+  }
+
+  // Event Listeners
+  document.getElementById('connect').addEventListener('click', async () => {
+    const tk = tokenEl.value.trim() || 'DCK';
+    const it = parseInt(intervalEl.value, 10) || 1;
+    await loadHistory(tk);
+    connectWS(tk, it);
+    refreshAudit();
+  });
+
+  document.getElementById('disconnect').addEventListener('click', () => {
+    if (ws) { try{ ws.close(); }catch{} ws=null; }
+    setConnected(false);
+  });
+
+  document.getElementById('refreshAudit').addEventListener('click', refreshAudit);
+
+  // Auto-load DCK on page load
+  loadHistory('DCK').then(() => connectWS('DCK', 1)).then(refreshAudit);
+})();
+</script>
+</body>
+</html>

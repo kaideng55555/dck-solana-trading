@@ -1,0 +1,7 @@
+# Redirect www to non-www and force HTTPS
+https://www.dcktoken.com/*  https://dcktoken.com/:splat  301!
+http://www.dcktoken.com/*   https://dcktoken.com/:splat  301!
+http://dcktoken.com/*       https://dcktoken.com/:splat  301!
+
+# SPA fallback - serve index.html for all routes not found
+/*    /index.html   200

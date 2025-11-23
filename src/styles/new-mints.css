@@ -1,0 +1,33 @@
+.nm-wrap{ padding:16px; color:#e8ecff; }
+.nm-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.nm-status{ font-size:12px; opacity:.8; display:flex; align-items:center; gap:6px; }
+.nm-status .dot{ width:8px; height:8px; border-radius:999px; display:inline-block; background:#888; }
+.nm-status[data-s="open"] .dot{ background:#2dd4bf; }
+.nm-status[data-s="connecting"] .dot{ background:#facc15; }
+.nm-status[data-s="error"] .dot{ background:#ef4444; }
+.nm-controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; }
+.nm-controls .nm-search{ flex:1 1 220px; min-width:200px; padding:8px 10px; background:#0f1120; border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#fff; }
+.nm-controls .nm-right{ margin-left:auto; }
+
+.nm-list{ display:flex; flex-direction:column; gap:8px; }
+.nm-row{
+  display:grid; grid-template-columns: 110px 1fr 320px 280px 120px; gap:12px; align-items:center;
+  padding:10px; border:1px solid rgba(255,255,255,0.06); border-radius:12px; background:linear-gradient(180deg, rgba(255,61,184,0.06), rgba(53,184,255,0.06));
+  box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 0 40px rgba(53,184,255,0.05), inset 0 0 40px rgba(255,61,184,0.05);
+}
+.nm-time{ opacity:.8; font-variant-numeric: tabular-nums; }
+.nm-asset{ display:flex; align-items:center; gap:10px; }
+.nm-asset img{ width:44px; height:44px; border-radius:8px; object-fit:cover; border:1px solid rgba(255,255,255,0.15); box-shadow: 0 0 14px rgba(53,184,255,.25); }
+.nm-meta .nm-name{ font-weight:700; letter-spacing:.2px }
+.nm-meta .muted{ opacity:.7; margin-left:8px; font-size:12px }
+.nm-meta .nm-mint{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity:.8; font-size:12px }
+
+.nm-stats{ display:flex; gap:12px; align-items:center; font-size:13px; }
+.nm-stats .ok{ color:#34d399 } .nm-stats .warn{ color:#f87171 }
+.nm-links{ display:flex; gap:10px; flex-wrap:wrap; }
+.nm-links a{ color:#93c5fd; text-decoration:none; border:1px solid rgba(147,197,253,.25); padding:6px 10px; border-radius:10px; }
+.nm-actions .btn{ border:1px solid rgba(255,255,255,0.2); background:linear-gradient(180deg, rgba(255,61,184,0.25), rgba(255,61,184,0.08)); color:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; }
+@media (max-width: 1024px){
+  .nm-row{ grid-template-columns: 90px 1fr; grid-auto-rows:auto; }
+  .nm-stats, .nm-links, .nm-actions{ grid-column: 1 / -1; }
+}
