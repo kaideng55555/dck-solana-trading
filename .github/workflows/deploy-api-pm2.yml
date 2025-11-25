@@ -1,0 +1,97 @@
+name: Deploy API with PM2
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'backend-node/**'
+      - 'backend-python/**'
+      - '.github/workflows/deploy-api-pm2.yml'
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            
+            API_PATH="${{ secrets.DEPLOY_PATH_API }}"
+            
+            echo "🚀 Deploying DCK$ API to $API_PATH"
+            
+            # Clone or update repo
+            if [ ! -d "$API_PATH/.git" ]; then
+              sudo mkdir -p $API_PATH
+              sudo chown ${{ secrets.DEPLOY_USER }}:${{ secrets.DEPLOY_USER }} $API_PATH
+              git clone https://github.com/kaideng55555/dck-solana-trading.git $API_PATH
+            else
+              cd $API_PATH
+              git fetch origin
+              git reset --hard origin/main
+            fi
+            
+            cd $API_PATH
+            
+            # Deploy backend-node
+            echo "📦 Deploying backend-node..."
+            cd backend-node
+            npm ci --production
+            
+            # Create .env if not exists
+            if [ ! -f .env ]; then
+              cat > .env << 'EOF'
+            QUICKNODE_HTTP=${{ secrets.QUICKNODE_HTTP }}
+            QUICKNODE_WSS=${{ secrets.QUICKNODE_WSS }}
+            PORT=3001
+            EOF
+            fi
+            
+            # Restart with PM2
+            pm2 delete dck-api-node 2>/dev/null || true
+            pm2 start server.js --name dck-api-node
+            
+            # Deploy backend-python
+            echo "🐍 Deploying backend-python..."
+            cd $API_PATH/backend-python
+            
+            if [ ! -d venv ]; then
+              python3 -m venv venv
+            fi
+            
+            source venv/bin/activate
+            pip install -q --upgrade pip
+            pip install -q -r requirements.txt
+            
+            # Restart with PM2
+            pm2 delete dck-api-python 2>/dev/null || true
+            pm2 start --name dck-api-python \
+              --interpreter $API_PATH/backend-python/venv/bin/python \
+              -- -m uvicorn main:app --host 0.0.0.0 --port 8000
+            
+            # Save PM2 configuration
+            pm2 save
+            
+            echo "✅ Deployment complete"
+            pm2 list
+      
+      - name: Notify Slack (success)
+        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"✅ API deployed successfully to production @ '"$GITHUB_SHA"'"}' \
+            "${{ secrets.SLACK_WEBHOOK_URL }}"
+      
+      - name: Notify Slack (failure)
+        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ API deployment failed @ '"$GITHUB_SHA"'"}' \
+            "${{ secrets.SLACK_WEBHOOK_URL }}"
