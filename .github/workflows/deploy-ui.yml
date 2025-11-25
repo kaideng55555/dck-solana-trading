@@ -1,0 +1,44 @@
+name: Deploy UI (dcktoken.com)
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: [ "src/**", "package.json", "vite.config.*", ".github/workflows/deploy-ui.yml" ]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Install deps
+        run: npm ci
+      - name: Set build env
+        run: |
+          echo "VITE_API_BASE=${{ secrets.VITE_API_BASE || 'https://api.dcktoken.com' }}" >> .env
+          echo "VITE_REQUIRE_CONNECTED_WALLET=${{ secrets.VITE_REQUIRE_CONNECTED_WALLET || 'true' }}" >> .env
+          echo "VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN || '' }}" >> .env
+          echo "VITE_DEFAULT_OWNER_PUBKEY=${{ secrets.VITE_DEFAULT_OWNER_PUBKEY || '6dYyWPEANju88Ku259qZ1RLUNtjWiP3grtW5fDQPMDP2' }}" >> .env
+      - name: Build UI
+        run: npm run -s build
+      - name: Upload build to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist/*"
+          target: "${{ secrets.DEPLOY_PATH_WEB }}"
+          strip_components: 1
+      - name: Slack notify success
+        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"✅ UI deployed to *dcktoken.com* @ $GITHUB_SHA\"}" \
+            "${{ secrets.SLACK_WEBHOOK_URL }}"
+      - name: Slack notify failure
+        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"❌ UI deploy failed @ $GITHUB_SHA\"}" \
+            "${{ secrets.SLACK_WEBHOOK_URL }}"

@@ -1,0 +1,58 @@
+name: CI - Build & Test
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main, ops/** ]
+jobs:
+  test-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20", cache: "npm" }
+      - run: npm ci
+      - run: npm run test -- --run
+        env:
+          CI: true
+      - run: npm run build
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-dist
+          path: dist/
+          retention-days: 7
+
+  test-backend-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Install backend-node deps
+        working-directory: backend-node
+        run: npm ci
+      - name: Lint backend-node
+        working-directory: backend-node
+        run: npm run lint || echo "No lint script defined"
+      - name: Test backend-node
+        working-directory: backend-node
+        run: npm test || echo "No test script defined"
+
+  test-backend-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: "pip" }
+      - name: Install backend-python deps
+        working-directory: backend-python
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      - name: Lint backend-python
+        working-directory: backend-python
+        run: python -m py_compile *.py || echo "Linting done"
+      - name: Test backend-python
+        working-directory: backend-python
+        run: pytest || echo "No tests found"

@@ -1,0 +1,63 @@
+name: Deploy API (api.dcktoken.com)
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths: [ "backend-node/**", "backend-python/**", ".github/workflows/deploy-api.yml" ]
+jobs:
+  deploy-node-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Install backend-node deps
+        working-directory: backend-node
+        run: npm ci
+      - name: Deploy backend-node via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH_API_NODE }}
+            git pull origin main
+            npm ci
+            pm2 restart dck-api-node || pm2 start server.js --name dck-api-node
+      - name: Slack notify
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        run: |
+          STATUS="${{ job.status == 'success' && '✅' || '❌' }}"
+          curl -s -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"$STATUS Node API deployed @ $GITHUB_SHA\"}" \
+            "${{ secrets.SLACK_WEBHOOK_URL }}"
+
+  deploy-python-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install backend-python deps
+        working-directory: backend-python
+        run: pip install -r requirements.txt
+      - name: Deploy backend-python via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH_API_PYTHON }}
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            pm2 restart dck-api-python || pm2 start "uvicorn main:app --host 0.0.0.0 --port 8000" --name dck-api-python
+      - name: Slack notify
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        run: |
+          STATUS="${{ job.status == 'success' && '✅' || '❌' }}"
+          curl -s -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"$STATUS Python API deployed @ $GITHUB_SHA\"}" \
+            "${{ secrets.SLACK_WEBHOOK_URL }}"
