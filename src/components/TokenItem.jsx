@@ -3,6 +3,7 @@ import TokenChart from './TokenChart';
 import TimeframeSelect from './TimeframeSelect';
 import TradesTape from './TradesTape';
 import QuickSnipeButton from './QuickSnipeButton';
+import RiskBadge from './RiskBadge';
 import useChartPrefs from '../hooks/useChartPrefs';
 
 /**
@@ -25,9 +26,12 @@ export default function TokenItem({ token }) {
       {/* Token Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-3">
         <div>
-          <h3 className="text-lg font-bold text-cyan-300">
-            {token.symbol || 'Unknown'}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-cyan-300">
+              {token.symbol || 'Unknown'}
+            </h3>
+            <RiskBadge score={token.riskScore || 50} />
+          </div>
           {token.name && (
             <p className="text-xs text-gray-400">{token.name}</p>
           )}

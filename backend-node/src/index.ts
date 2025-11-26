@@ -43,16 +43,10 @@ if (process.env.SENTRY_DSN) {
 
 // Security & logging
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '*').split(',').map(s => s.trim()).filter(Boolean);
-const corsOptions = {
-  origin: (origin: any, callback: any) => {
-    if (!origin || ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
+app.use(cors({
+  origin: ALLOWED_ORIGINS.includes('*') ? '*' : ALLOWED_ORIGINS,
   credentials: true
-};
-app.use(cors(corsOptions));
+}));
 app.use(helmet());
 app.use(morgan('tiny'));
 app.use(express.json());

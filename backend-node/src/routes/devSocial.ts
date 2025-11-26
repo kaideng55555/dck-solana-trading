@@ -1,5 +1,6 @@
 // backend-node/src/routes/devSocial.ts
 import type { Express, Request, Response, NextFunction } from "express";
+import { setSseHeaders, writeEvent } from '../lib/sse';
 
 type Trend = {
   symbol?: string;
@@ -109,16 +110,12 @@ export function registerDevSocialRoutes(app: Express) {
 
   // Social stream - sends synthetic events every 2s
   app.get("/social/stream", (req: Request, res: Response) => {
-    res.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-      "Access-Control-Allow-Origin": "*",
-    });
+    setSseHeaders(res);
 
     const symbols = ['DOGE', 'PEPE', 'BONK', 'WIF', 'POPCAT'];
     const sentiments = ['Positive', 'Neutral', 'Negative'];
     
+    let eventId = 0;
     const interval = setInterval(() => {
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       const mentions = Math.floor(Math.random() * 1000) + 100;
@@ -126,7 +123,7 @@ export function registerDevSocialRoutes(app: Express) {
       
       const event = { symbol, mentions, sentiment };
       try {
-        res.write(`data: ${JSON.stringify(event)}\n\n`);
+        writeEvent(res, ++eventId, event);
       } catch {
         clearInterval(interval);
       }
