@@ -22,6 +22,8 @@ import { registerChainRoutes } from './routes/chain.js';
 import { registerWalletRoutes } from './routes/wallet.js';
 import { registerSocialRoutes } from './routes/social.js';
 import { registerDevSocialRoutes } from './routes/devSocial.js';
+import { registerRiskRoutes } from './routes/risk.js';
+import { registerPresetsRoutes } from './routes/presets.js';
 import { startOnchainTradeIngest } from './ingest/onchainTrades.js';
 import { startOnchainWalletIngest } from './ingest/onchainWallet.js';
 
@@ -90,6 +92,8 @@ registerChainRoutes(app);
 registerWalletRoutes(app);
 registerSocialRoutes(app);
 registerDevSocialRoutes(app);
+registerRiskRoutes(app);
+registerPresetsRoutes(app);
 
 // Sentry error handler
 if (process.env.SENTRY_DSN) {
