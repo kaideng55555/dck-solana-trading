@@ -1,1 +1,4 @@
-/* chart.css - awaiting bundle content */
+/* src/styles/chart.css */
+.lw-theme-neon .tv-lightweight-charts {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
