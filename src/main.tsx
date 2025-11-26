@@ -8,6 +8,7 @@ import './styles/effects.css'
 import './styles/switch.css'
 import './styles/theme.css'
 import './styles/animations_extra.css'
+import './styles/chart.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <WalletContextProvider>
