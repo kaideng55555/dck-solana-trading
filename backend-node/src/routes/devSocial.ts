@@ -107,6 +107,36 @@ export function registerDevSocialRoutes(app: Express) {
     req.on("close", () => { clients.delete(client); });
   });
 
+  // Social stream - sends synthetic events every 2s
+  app.get("/social/stream", (req: Request, res: Response) => {
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "Access-Control-Allow-Origin": "*",
+    });
+
+    const symbols = ['DOGE', 'PEPE', 'BONK', 'WIF', 'POPCAT'];
+    const sentiments = ['Positive', 'Neutral', 'Negative'];
+    
+    const interval = setInterval(() => {
+      const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+      const mentions = Math.floor(Math.random() * 1000) + 100;
+      const sentiment = sentiments[Math.floor(Math.random() * sentiments.length)];
+      
+      const event = { symbol, mentions, sentiment };
+      try {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      } catch {
+        clearInterval(interval);
+      }
+    }, 2000);
+
+    req.on('close', () => {
+      clearInterval(interval);
+    });
+  });
+
   // DEV trends endpoint that reads the in-memory store
   app.get("/social/trends/dev", (_req: Request, res: Response) => {
     const items = Array.from(store.values());
