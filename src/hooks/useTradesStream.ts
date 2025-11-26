@@ -1,0 +1,2 @@
+import { useEffect, useState } from 'react';
+export function useTradesStream(contracts: string[]) { const [events,setEvents]=useState<any[]>([]); useEffect(()=>{ if(!contracts.length) return; const es=new EventSource(`/stream/trades?contracts=${encodeURIComponent(contracts.join(','))}`); es.onmessage=(e)=>{ try{ setEvents(prev=>[...prev.slice(-500), JSON.parse(e.data)]);}catch{} }; return ()=>es.close(); },[contracts.join(',')]); return { events }; }

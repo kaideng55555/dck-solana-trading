@@ -1,0 +1,1 @@
+import React from 'react'; export default function SafetyBadge(){ return <div className="text-xs text-muted">Safety</div>; }

@@ -1,0 +1,4 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DCK Status</title>
+<style>body{font-family:ui-sans-serif,system-ui;background:#0b0e12;color:#f1f5f9;margin:0;padding:24px}.ok{color:#10b981}.bad{color:#ef4444}.card{border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:12px}code{background:#111827;padding:2px 4px;border-radius:6px}</style></head>
+<body><h1>DCK Status</h1><div class="card"><b>Health</b><div id="health">…</div></div><div class="card"><b>Readiness</b><div id="ready">…</div></div>
+<script>async function p(i,u){try{const r=await fetch(u);const j=await r.json();document.getElementById(i).textContent=JSON.stringify(j)}catch(e){document.getElementById(i).textContent='ERR '+e}}p('health','/healthz');p('ready','/readyz');</script></body></html>
