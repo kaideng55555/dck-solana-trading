@@ -7,10 +7,61 @@ const clients: Set<Client> = new Set();
 
 // WebSocket server for dev trades
 let devWss: WebSocketServer | null = null;
+let tradeInterval: NodeJS.Timeout | null = null;
 
 export function initDevTrades(wss: WebSocketServer) {
   devWss = wss;
   console.log('📡 Dev trades WebSocket initialized');
+  
+  // Start synthetic trade broadcasting
+  startTradeLoop();
+  
+  // Check for disconnects
+  wss.on('connection', (ws, req) => {
+    const url = new URL(req.url || '', `http://${req.headers.host}`);
+    const token = url.searchParams.get('token');
+    
+    console.log(`WebSocket client connected: ${token || 'unknown'}`);
+    
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      // Stop loop if no clients
+      if (wss.clients.size === 0) {
+        stopTradeLoop();
+      }
+    });
+  });
+}
+
+function startTradeLoop() {
+  if (tradeInterval) return;
+  
+  tradeInterval = setInterval(() => {
+    if (!devWss || devWss.clients.size === 0) {
+      stopTradeLoop();
+      return;
+    }
+    
+    const trade = {
+      type: Math.random() > 0.5 ? 'buy' : 'sell',
+      amount: Math.floor(Math.random() * 1000) + 100,
+      price: (Math.random() * 10).toFixed(6),
+      ts: Date.now()
+    };
+    
+    const payload = JSON.stringify(trade);
+    devWss.clients.forEach(client => {
+      if (client.readyState === 1) client.send(payload);
+    });
+  }, 1500);
+}
+
+function stopTradeLoop() {
+  if (tradeInterval) {
+    clearInterval(tradeInterval);
+    tradeInterval = null;
+    console.log('📡 Trade loop stopped (no clients)');
+  }
 }
 
 function send(res: Response, data: any) { res.write(`data: ${JSON.stringify(data)}\n\n`); }
