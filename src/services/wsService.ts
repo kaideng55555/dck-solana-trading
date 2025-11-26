@@ -132,7 +132,7 @@ function subscribeToSolanaRpc(url: string, onEvent: (e: MintEvent) => void, onSt
                   pump: `https://pump.fun/coin/${mint}`
                 }
               });
-              console.log('🚀 NEW TOKEN LAUNCHED:', data.name, data.address);
+              console.log('🚀 NEW TOKEN LAUNCHED:', mint);
             }
           } catch (e) {
             console.error('Error fetching tx details:', e);

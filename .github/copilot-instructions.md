@@ -76,6 +76,7 @@ uvicorn main:app --reload --port 8000 # Standard FastAPI dev server
 - `VITE_ENABLE_DEMO_MODE`: `true` or `false` to toggle real/demo badge.
 - `QUICKNODE_HTTP` (Backend-Node): Solana RPC endpoint (HTTP).
 - `QUICKNODE_WSS` (Backend-Node): WebSocket RPC endpoint (WSS).
+- `PORT`: Port for the Backend-Node server.
 
 ## Integration Points
 
@@ -87,3 +88,7 @@ uvicorn main:app --reload --port 8000 # Standard FastAPI dev server
 - **Vitest**: Used for unit and component testing.
 - **Real-time**: `useRealWS.ts` handles live WebSocket connections (QuickNode).
 - **Setup**: `src/test/setup.ts` configures the test environment.
+
+QUICKNODE_HTTP=your-mainnet-https-url
+QUICKNODE_WSS=your-mainnet-wss-url
+PORT=3001

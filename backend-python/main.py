@@ -1,5 +1,5 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException # type: ignore
+from fastapi.responses import HTMLResponse # type: ignore
 from typing import Dict, List, Set, Optional
 import asyncio
 import json
@@ -7,7 +7,7 @@ import time
 import logging
 from datetime import datetime
 import sqlite3
-import aiohttp
+import aiohttp  # Install with: pip install aiohttp
 from dataclasses import dataclass, asdict
 import os
 

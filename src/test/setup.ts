@@ -10,7 +10,19 @@ afterEach(() => {
   cleanup()
 })
 
-## Testing Strategy
-- **Vitest**: Used for unit and component testing.
-- **Real-time**: `useRealWS.ts` handles live WebSocket connections (QuickNode).
-- **Setup**: `src/test/setup.ts` configures the test environment.
+function connections ( QuickNode: any )
+{
+  if (!QuickNode) {
+    throw new Error('QuickNode parameter is required')
+  }
+  
+  // Mock or initialize WebSocket connections for testing
+  return {
+    connect: () => Promise.resolve(),
+    disconnect: () => Promise.resolve(),
+    isConnected: () => false,
+    send: (data: any) => Promise.resolve(),
+    on: (event: string, handler: Function) => {},
+    off: (event: string, handler: Function) => {}
+  }
+}
