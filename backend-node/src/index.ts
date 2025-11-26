@@ -8,7 +8,7 @@ import { WebSocketServer } from 'ws';
 import { Connection } from '@solana/web3.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerMetricsRoutes } from './routes/metrics.js';
-import { registerStreamRoutes } from './routes/stream.js';
+import { registerStreamRoutes, initDevTrades } from './routes/stream.js';
 import { registerFeeSuggestRoutes } from './routes/fees.js';
 import { registerStatusRoutes } from './routes/status.js';
 import { registerJitoRoutes } from './routes/jito.js';
@@ -114,6 +114,7 @@ const server = app.listen(PORT, () => {
   console.log(`👛 Wallet ingest: ${process.env.WALLET_INGEST === 'on' ? 'ENABLED' : 'OFF'}`);
 });
 
-// WebSocket server (for backward compatibility)
+// WebSocket server for real-time trade updates
 const wss = new WebSocketServer({ server });
-console.log('📡 WebSocket server initialized');
+initDevTrades(wss);
+console.log('📡 WebSocket server initialized with dev trades');

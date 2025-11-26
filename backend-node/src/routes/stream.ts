@@ -1,10 +1,29 @@
 import type { Express, Request, Response } from 'express';
+import type { WebSocketServer } from 'ws';
+
 type TradeEvent = { contract: string; side: 'buy'|'sell'; amountUi: number; priceUi: number; ts: number; wallet?: string };
 type Client = { res: Response; filter: Set<string> | null };
 const clients: Set<Client> = new Set();
+
+// WebSocket server for dev trades
+let devWss: WebSocketServer | null = null;
+
+export function initDevTrades(wss: WebSocketServer) {
+  devWss = wss;
+  console.log('📡 Dev trades WebSocket initialized');
+}
+
 function send(res: Response, data: any) { res.write(`data: ${JSON.stringify(data)}\n\n`); }
 export function publishTrade(ev: TradeEvent) {
+  // Broadcast to SSE clients
   for (const c of clients) { if (c.filter && !c.filter.has(ev.contract)) continue; try { send(c.res, ev); } catch {} }
+  // Broadcast to WebSocket clients
+  if (devWss) {
+    const payload = JSON.stringify(ev);
+    devWss.clients.forEach(client => {
+      if (client.readyState === 1) client.send(payload); // 1 = OPEN
+    });
+  }
 }
 export function getContractsWatchlist(): string[] {
   // Return all unique contracts being watched
