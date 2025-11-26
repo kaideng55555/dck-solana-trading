@@ -16,7 +16,12 @@ import { registerSnipeRoutes } from './routes/snipe.js';
 import { registerLockLPRoutes } from './routes/lock-lp.js';
 import { registerTokenRoutes } from './routes/token.js';
 import { registerPriceRoutes } from './routes/price.js';
+import { registerChainRoutes } from './routes/chain.js';
+// import { registerNftRoutes } from './routes/nft.js'; // Temporarily disabled - needs Metaplex v3 API update
+import { registerWalletRoutes } from './routes/wallet.js';
+import { registerSocialRoutes } from './routes/social.js';
 import { startOnchainTradeIngest } from './ingest/onchainTrades.js';
+import { startOnchainWalletIngest } from './ingest/onchainWallet.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,9 +32,9 @@ if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
-    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1)
+    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
+    integrations: [Sentry.expressIntegration()]
   });
-  app.use(Sentry.Handlers.requestHandler());
 }
 
 // Security & logging
@@ -77,10 +82,14 @@ registerSnipeRoutes(app);
 registerLockLPRoutes(app);
 registerTokenRoutes(app);
 registerPriceRoutes(app);
+registerChainRoutes(app);
+// registerNftRoutes(app); // Temporarily disabled - needs Metaplex v3 API update
+registerWalletRoutes(app);
+registerSocialRoutes(app);
 
 // Sentry error handler
 if (process.env.SENTRY_DSN) {
-  app.use(Sentry.Handlers.errorHandler());
+  app.use(Sentry.expressErrorHandler());
 }
 
 // Start ingest if enabled
@@ -89,10 +98,16 @@ if (process.env.TRADE_INGEST === 'on' && (process.env.RPC_HTTP || process.env.QU
   startOnchainTradeIngest(connection);
 }
 
+if (process.env.WALLET_INGEST === 'on' && (process.env.RPC_HTTP || process.env.QUICKNODE_RPC)) {
+  console.log('🔄 Starting onchain wallet ingest...');
+  startOnchainWalletIngest(connection);
+}
+
 const server = app.listen(PORT, () => {
   console.log(`🚀 DCK$ TOOLS Node backend listening on port ${PORT}`);
   console.log(`🌐 CORS: ${ALLOWED_ORIGINS.join(', ')}`);
   console.log(`📊 Trade ingest: ${process.env.TRADE_INGEST === 'on' ? 'ENABLED' : 'OFF'}`);
+  console.log(`👛 Wallet ingest: ${process.env.WALLET_INGEST === 'on' ? 'ENABLED' : 'OFF'}`);
 });
 
 // WebSocket server (for backward compatibility)
