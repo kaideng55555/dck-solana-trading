@@ -21,6 +21,7 @@ import { registerChainRoutes } from './routes/chain.js';
 // import { registerNftRoutes } from './routes/nft.js'; // Temporarily disabled - needs Metaplex v3 API update
 import { registerWalletRoutes } from './routes/wallet.js';
 import { registerSocialRoutes } from './routes/social.js';
+import { registerDevSocialRoutes } from './routes/devSocial.js';
 import { startOnchainTradeIngest } from './ingest/onchainTrades.js';
 import { startOnchainWalletIngest } from './ingest/onchainWallet.js';
 
@@ -88,6 +89,7 @@ registerChainRoutes(app);
 // registerNftRoutes(app); // Temporarily disabled - needs Metaplex v3 API update
 registerWalletRoutes(app);
 registerSocialRoutes(app);
+registerDevSocialRoutes(app);
 
 // Sentry error handler
 if (process.env.SENTRY_DSN) {
