@@ -8,6 +8,10 @@ on:
       - 'backend-python/**'
       - '.github/workflows/deploy-api-pm2.yml'
 
+concurrency:
+  group: deploy-api-pm2-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   deploy-api:
     runs-on: ubuntu-latest
