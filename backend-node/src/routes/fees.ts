@@ -1,21 +1,57 @@
-import type { Express } from 'express';
-import { Connection } from '@solana/web3.js';
-export function registerFeeRoutes(app: Express) {
-  const RPC_HTTP = process.env.RPC_HTTP || process.env.QUICKNODE_RPC;
-  const conn = RPC_HTTP ? new Connection(RPC_HTTP, 'confirmed') : null;
-  app.get('/fees/suggest', async (_req, res) => {
+// backend-node/src/routes/fees.ts
+import type { Express, Request, Response } from "express";
+import { Connection } from "@solana/web3.js";
+
+type Suggest = {
+  safe: number;
+  normal: number;
+  fast: number;
+  percentiles: Record<string, number>;
+  sampleSize: number;
+};
+
+function percentile(arr: number[], p: number) {
+  if (!arr.length) return 0;
+  const idx = Math.floor((p / 100) * (arr.length - 1));
+  const sorted = arr.slice().sort((a,b)=>a-b);
+  return sorted[idx];
+}
+
+export function registerFeeSuggestRoutes(app: Express) {
+  const RPC = process.env.RPC_HTTP || process.env.QUICKNODE_RPC || "";
+
+  app.get("/fees/suggest", async (_req: Request, res: Response) => {
+    if (!RPC) return res.status(503).json({ ok: false, error: "RPC not configured" });
     try {
-      if (!conn) return res.json({ priorityFeeMicros: 10_000, tipLamports: 50_000, pressure: 1, note: 'No RPC configured' });
-      const slotStart = await conn.getSlot('processed');
-      const N = 20; const times: (number|null)[] = [];
-      for (let i=0;i<N;i++) { try { times.push(await conn.getBlockTime(slotStart - i)); } catch { times.push(null); } }
-      const series = times.filter((t): t is number => t !== null);
-      const deltas = series.slice(1).map((t,i)=>Math.abs(t - series[i]));
-      const avg = deltas.length ? deltas.reduce((a,b)=>a+b,0)/deltas.length : 0.4;
-      const pressure = Math.min(3, Math.max(0.5, avg / 0.4));
-      const priorityFeeMicros = Math.floor(10_000 * pressure);
-      const tipLamports = Math.floor(50_000 * pressure);
-      res.json({ priorityFeeMicros, tipLamports, pressure });
-    } catch (e:any) { res.json({ priorityFeeMicros: 10_000, tipLamports: 50_000, pressure: 1, error: e?.message }); }
+      const conn = new Connection(RPC, "confirmed");
+      // Prefer native method if available
+      let fees: any[] = [];
+      try {
+        // @ts-ignore: private rpcRequest
+        const r = await (conn as any).rpcRequest("getRecentPrioritizationFees", []);
+        fees = r?.result || [];
+      } catch (e) {
+        // fallback: zero
+        fees = [];
+      }
+      const micros = Array.isArray(fees) ? fees.map((f: any) => Number(f?.prioritizationFee || 0)).filter((n: number)=>Number.isFinite(n) && n>=0) : [];
+      const p = {
+        p10: percentile(micros, 10),
+        p25: percentile(micros, 25),
+        p50: percentile(micros, 50),
+        p75: percentile(micros, 75),
+        p90: percentile(micros, 90),
+      };
+      const suggest: Suggest = {
+        safe: p.p25 || Number(process.env.FEE_SAFE || 10_000),
+        normal: p.p50 || Number(process.env.FEE_NORMAL || 30_000),
+        fast: p.p75 || Number(process.env.FEE_FAST || 80_000),
+        percentiles: p as any,
+        sampleSize: micros.length
+      };
+      res.json({ ok: true, suggest });
+    } catch (e: any) {
+      res.status(500).json({ ok: false, error: e?.message || "fee suggest failed" });
+    }
   });
 }

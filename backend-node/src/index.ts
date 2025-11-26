@@ -9,7 +9,8 @@ import { Connection } from '@solana/web3.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerMetricsRoutes } from './routes/metrics.js';
 import { registerStreamRoutes } from './routes/stream.js';
-import { registerFeeRoutes } from './routes/fees.js';
+import { registerFeeSuggestRoutes } from './routes/fees.js';
+import { registerStatusRoutes } from './routes/status.js';
 import { registerJitoRoutes } from './routes/jito.js';
 import { registerSnipeRoutes } from './routes/snipe.js';
 // import { registerLaunchRoutes } from './routes/launch.js'; // Temporarily disabled - needs Metaplex v3 API update
@@ -74,8 +75,9 @@ app.get('/', (_, res) => {
 // Register all routes
 registerHealthRoutes(app);
 registerMetricsRoutes(app);
+registerStatusRoutes(app);
 registerStreamRoutes(app);
-registerFeeRoutes(app);
+registerFeeSuggestRoutes(app);
 registerJitoRoutes(app);
 registerSnipeRoutes(app);
 // registerLaunchRoutes(app); // Temporarily disabled - needs Metaplex v3 API update
