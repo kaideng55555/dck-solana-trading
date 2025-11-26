@@ -12,7 +12,7 @@ import { registerStreamRoutes } from './routes/stream.js';
 import { registerFeeRoutes } from './routes/fees.js';
 import { registerJitoRoutes } from './routes/jito.js';
 import { registerSnipeRoutes } from './routes/snipe.js';
-// import { registerLaunchRoutes } from './routes/launch.js'; // Temporarily disabled - needs Metaplex v3 API update
+import { registerLaunchRoutes } from './routes/launch.js';
 import { registerLockLPRoutes } from './routes/lock-lp.js';
 import { registerTokenRoutes } from './routes/token.js';
 import { registerPriceRoutes } from './routes/price.js';
@@ -73,7 +73,7 @@ registerStreamRoutes(app);
 registerFeeRoutes(app);
 registerJitoRoutes(app);
 registerSnipeRoutes(app);
-// registerLaunchRoutes(app); // Temporarily disabled - needs Metaplex v3 API update
+registerLaunchRoutes(app);
 registerLockLPRoutes(app);
 registerTokenRoutes(app);
 registerPriceRoutes(app);

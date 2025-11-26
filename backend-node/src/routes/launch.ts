@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from 'express';
 import { Connection, PublicKey, SystemProgram, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { getMinimumBalanceForRentExemptMint, MINT_SIZE, createInitializeMintInstruction, getAssociatedTokenAddress, createAssociatedTokenAccountInstruction, createMintToInstruction, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createSetAuthorityInstruction, AuthorityType } from '@solana/spl-token';
-import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID, createCreateMetadataAccountV3Instruction } from '@metaplex-foundation/mpl-token-metadata';
+import { MPL_TOKEN_METADATA_PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID, createCreateMetadataAccountV3Instruction } from '@metaplex-foundation/mpl-token-metadata';
 import { buildRaydiumCreatePoolIx, buildRaydiumAddLiquidityIxs } from '../lib/raydiumPool';
 import { buildInitializeLockerIx } from '../lib/locker';
 type LaunchBody = { name: string; symbol: string; decimals: number; metadataUri: string; supply: number; initialPrice: number; liqSol: number; lockDurationSec: number; feeBps?: number; creator: string; mint?: string; removeFreezeAuthority?: boolean; };

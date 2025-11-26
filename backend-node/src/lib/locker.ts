@@ -1,5 +1,5 @@
 import { PublicKey, TransactionInstruction, SYSVAR_CLOCK_PUBKEY } from '@solana/web3.js';
-const LOCKER_PROGRAM_ID = new PublicKey(process.env.LOCKER_PROGRAM_ID || 'DCKLoCkeR111111111111111111111111111111111');
+const LOCKER_PROGRAM_ID = new PublicKey(process.env.LOCKER_PROGRAM_ID || '11111111111111111111111111111111');
 export function buildInitializeLockerIx(p: { creator: PublicKey; lpMint: PublicKey | null; unlockAt: number }) {
   const [lockerPda] = PublicKey.findProgramAddressSync([Buffer.from('locker'), (p.lpMint ?? PublicKey.default).toBuffer()], LOCKER_PROGRAM_ID);
   const data = Buffer.alloc(16);
