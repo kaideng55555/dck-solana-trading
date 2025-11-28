@@ -1,82 +1,30 @@
-import { useState, useEffect } from 'react';
+// src/hooks/useRisk.js
+import { useEffect, useState } from "react";
 
-const cache = new Map();
-
-/**
- * Load risk score for a single mint
- * @param {string} mint - Token mint address
- * @param {string} baseUrl - API base URL (default: VITE_API_URL or http://localhost:3001)
- * @returns {{risk: any, loading: boolean, error: string}}
- */
-export function useRisk(mint, baseUrl = '') {
-  const apiUrl = baseUrl || import.meta.env.VITE_API_URL || 'http://localhost:3001';
-  const [risk, setRisk] = useState(mint ? (cache.get(mint) || null) : null);
-  const [loading, setLoading] = useState(false);
+export default function useRisk(mint){
+  const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let alive = true;
+  useEffect(()=>{
     if (!mint) return;
-    if (cache.has(mint)) {
-      setRisk(cache.get(mint));
-      return;
-    }
-
-    (async () => {
-      setLoading(true);
-      setError(null);
+    let cancel = false;
+    setLoading(true);
+    const cacheKey = "risk:"+mint;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached){
       try {
-        const r = await fetch(`${apiUrl}/risk/${mint}`);
-        if (!r.ok) throw new Error(await r.text());
-        const j = await r.json();
-        if (!alive) return;
-        cache.set(mint, j);
-        setRisk(j);
-      } catch (e) {
-        if (!alive) return;
-        setError(e?.message || 'failed to load risk');
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [mint, apiUrl]);
-
-  return { risk, loading, error };
-}
-
-/**
- * Fetch risk scores for multiple mints in batch
- * @param {string[]} mints - Array of mint addresses
- * @param {string} baseUrl - API base URL
- * @returns {Promise<Record<string, any>>}
- */
-export async function fetchRiskBatch(mints, baseUrl = '') {
-  const apiUrl = baseUrl || import.meta.env.VITE_API_URL || 'http://localhost:3001';
-  const need = mints.filter(m => !cache.has(m));
-  
-  if (need.length) {
-    const r = await fetch(`${apiUrl}/risk/batch`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mints: need }),
-    });
-    
-    if (r.ok) {
-      const j = await r.json();
-      for (const it of (j.items || [])) {
-        cache.set(it.mint, it);
-      }
+        const j = JSON.parse(cached);
+        setData(j); setLoading(false);
+      } catch {}
     }
-  }
-  
-  const out = {};
-  for (const m of mints) {
-    const v = cache.get(m);
-    if (v) out[m] = v;
-  }
-  return out;
+    fetch(`/risk/${mint}`)
+      .then(r => r.json())
+      .then(j => { if (!cancel){ setData(j); sessionStorage.setItem(cacheKey, JSON.stringify(j)); } })
+      .catch(e => { if (!cancel) setError(String(e?.message||e)); })
+      .finally(()=> { if (!cancel) setLoading(false); });
+    return ()=> { cancel = true; };
+  }, [mint]);
+
+  return { data, error, loading };
 }

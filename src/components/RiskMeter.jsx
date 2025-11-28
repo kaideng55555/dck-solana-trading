@@ -1,26 +1,14 @@
-import React from 'react';
+// src/components/RiskMeter.jsx
+import React from "react";
 
-/**
- * Risk meter bar visualization
- * @param {{score: number}} props
- */
-export default function RiskMeter({ score = 0 }) {
-  const pct = Math.max(0, Math.min(100, score));
-  
-  const color = 
-    pct >= 75 ? '#10b981' : // green
-    pct >= 45 ? '#eab308' : // yellow
-    '#ef4444'; // red
-  
+export default function RiskMeter({ score = 50 }){
+  const pct = Math.max(0, Math.min(100, Number(score||0)));
   return (
-    <div 
-      className="w-full h-2 rounded-lg bg-gray-800 border border-gray-700" 
-      title={`Safety Score ${pct}`}
-    >
-      <div 
-        className="h-full rounded-lg transition-all" 
-        style={{ width: `${pct}%`, backgroundColor: color }} 
-      />
+    <div className="w-full">
+      <div className="text-xs text-pink-300 mb-1">Safety Score: {pct}</div>
+      <div className="w-full h-3 rounded bg-pink-500/20 overflow-hidden">
+        <div className="h-full bg-pink-500/70" style={{ width: pct + "%" }} />
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 # scripts/smoke.sh - API smoke tests
 
 API_BASE="${API_BASE:-http://localhost:3001}"
+VITE_BIRDEYE_API_KEY=your-actual-key
 
 echo "🧪 DCK$ API Smoke Tests"
 echo "========================"

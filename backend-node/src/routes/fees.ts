@@ -31,13 +31,6 @@ export function registerFeeSuggestRoutes(app: Express) {
       }
     };
     
-    res.json(suggest);
-  });
-}
-      };
-      res.json({ ok: true, suggest });
-    } catch (e: any) {
-      res.status(500).json({ ok: false, error: e?.message || "fee suggest failed" });
-    }
+    res.json({ ok: true, suggest });
   });
 }

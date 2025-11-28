@@ -1,25 +1,16 @@
-import React from 'react';
+// src/components/RiskBadge.jsx
+import React from "react";
 
-/**
- * Risk badge pill showing LOW/MED/HIGH
- * @param {{score: number}} props
- */
-export default function RiskBadge({ score }) {
-  if (typeof score !== 'number') return null;
-  
-  const level = score >= 75 ? 'LOW' : score >= 45 ? 'MED' : 'HIGH';
-  const colorClass = 
-    score >= 75 ? 'border-green-500/50 text-green-400' :
-    score >= 45 ? 'border-yellow-500/50 text-yellow-400' :
-    'border-red-500/50 text-red-400';
-  
+export default function RiskBadge({ label = "MEDIUM" }){
+  const color =
+    label === "LOW" ? "bg-green-500/30 text-green-200 border-green-400/50" :
+    label === "HIGH" ? "bg-red-500/30 text-red-200 border-red-400/50" :
+    "bg-yellow-500/30 text-yellow-200 border-yellow-400/50";
   return (
-    <span
-      className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${colorClass}`}
-      title={`Safety Score: ${score}/100`}
-      aria-label={`risk ${level}`}
-    >
-      RISK: {level}
+    <span className={"px-3 py-1 text-xs rounded-full border " + color}>
+      {label} RISK
     </span>
   );
 }
+
+// node scripts/mintToken.js create "Token Name" "SYMBOL" 6 1000000 "PRIVATE_KEY"

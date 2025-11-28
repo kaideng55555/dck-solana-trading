@@ -10,6 +10,9 @@ import TokenItem from './components/TokenItem';
 import { DCKZNFT, DCKZGallery } from './components/DCKZNFT';
 import AnalyticsView from './components/AnalyticsView';
 import NewMintsFeed from './components/NewMintsFeed';
+import AdminHome from './pages/admin/AdminHome';
+import AdminSwitches from './pages/admin/AdminSwitches';
+import AdminFees from './pages/admin/AdminFees';
 
 // Placeholder components for routes
 const NFTPage = () => <div className="p-6"><h2>NFT Gallery</h2></div>;
@@ -49,6 +52,9 @@ export default function AppRoutes({ connection, wallet }: any) {
                 <Route path="/music" element={<MusicPage />} />
                 <Route path="/community" element={<CommunityPage />} />
                 <Route path="/dck-tools" element={<DCKToolsHome />} />
+                <Route path="/admin" element={<AdminHome />} />
+                <Route path="/admin/switches" element={<AdminSwitches />} />
+                <Route path="/admin/fees" element={<AdminFees />} />
               </Route>
             </Routes>
           </SelectedTokenProvider>

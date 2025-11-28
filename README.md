@@ -197,7 +197,122 @@ SENTRY_DSN=https://xxx@sentry.io/xxx
 NODE_ENV=production
 RATE_LIMIT_WINDOW_MS=60000
 RATE_LIMIT_MAX=120
+
+# Admin & Trading Guard
+ADMIN_TOKEN=change-me-super-secret-in-production
+TRADING_PUBLIC=0                    # 0=closed beta, 1=public
+ALLOWED_WALLETS=Wallet1,Wallet2     # comma-separated base58 pubkeys
+MIN_LIQ_USD=3000
+MIN_TOKEN_AGE_MINUTES=20
+MAX_TAX_PCT=10
 ```
+
+### Admin System Deployment
+
+The admin panel allows you to control trading access and monitor fees.
+
+**1. Configure Admin Token**
+```bash
+# Edit .env on server
+sudo nano /opt/dck/backend-node/.env
+
+# Set secure admin token
+ADMIN_TOKEN=your-secure-random-token-here
+
+# Configure trading guard
+TRADING_PUBLIC=0                    # Start in closed beta
+ALLOWED_WALLETS=YourWallet1,YourWallet2
+MIN_LIQ_USD=3000
+MIN_TOKEN_AGE_MINUTES=20
+MAX_TAX_PCT=10
+```
+
+**2. Restart Backend**
+```bash
+pm2 restart dck-api
+pm2 logs dck-api --lines 50
+```
+
+**3. Verify Admin Endpoints**
+```bash
+# Test without token (expect 403 or 500)
+curl -s https://api.dcktoken.com/admin/trading/config | jq .
+
+# Test with token (expect config)
+curl -s https://api.dcktoken.com/admin/trading/config \
+  -H 'x-admin-token: your-secure-token' | jq .
+
+# Toggle trading public
+curl -s -X POST https://api.dcktoken.com/admin/trading/toggle \
+  -H 'content-type: application/json' \
+  -H 'x-admin-token: your-secure-token' \
+  -d '{"public":true}' | jq .
+
+# Add wallet to allowlist
+curl -s -X POST https://api.dcktoken.com/admin/trading/wallets/add \
+  -H 'content-type: application/json' \
+  -H 'x-admin-token: your-secure-token' \
+  -d '{"wallet":"YourWalletBase58Address"}' | jq .
+
+# Remove wallet from allowlist
+curl -s -X POST https://api.dcktoken.com/admin/trading/wallets/remove \
+  -H 'content-type: application/json' \
+  -H 'x-admin-token: your-secure-token' \
+  -d '{"wallet":"YourWalletBase58Address"}' | jq .
+
+# Update trading limits
+curl -s -X POST https://api.dcktoken.com/admin/trading/limits \
+  -H 'content-type: application/json' \
+  -H 'x-admin-token: your-secure-token' \
+  -d '{"minLiqUsd":5000,"minTokenAgeMinutes":30,"maxTaxPct":5}' | jq .
+
+# Record a fee event
+curl -s -X POST https://api.dcktoken.com/admin/fees/record \
+  -H 'content-type: application/json' \
+  -H 'x-admin-token: your-secure-token' \
+  -d '{"source":"jito","amountLamports":2500000,"tx":"sig...","note":"Bundle tip"}' | jq .
+
+# Get fee stats (24h/7d/30d)
+curl -s https://api.dcktoken.com/admin/fees/stats?period=24h \
+  -H 'x-admin-token: your-secure-token' | jq .
+```
+
+**Trading Guard in Action**
+```bash
+# Blocked without allowlist (expect 403 in closed beta)
+curl -s -X POST https://api.dcktoken.com/snipe/intent \
+  -H 'content-type: application/json' \
+  -d '{"mint":"So11111111111111111111111111111111111111112","lamports":500000}' | jq .
+
+# Allowed with x-wallet header (allowlisted wallet)
+curl -s -X POST https://api.dcktoken.com/snipe/intent \
+  -H 'content-type: application/json' \
+  -H 'x-wallet: YourWalletBase58' \
+  -d '{"mint":"So11111111111111111111111111111111111111112","lamports":500000}' | jq .
+
+# Admin bypass (always works)
+curl -s -X POST https://api.dcktoken.com/snipe/intent \
+  -H 'content-type: application/json' \
+  -H 'x-admin-token: your-secure-token' \
+  -d '{"mint":"So11111111111111111111111111111111111111112","lamports":500000}' | jq .
+```
+
+**4. Access Admin Dashboard**
+```
+https://app.dcktoken.com/admin
+```
+
+Login with your `ADMIN_TOKEN`, then:
+- `/admin/switches` - Control trading access (public/beta, allowlist, safety limits)
+- `/admin/fees` - Monitor revenue and fee events
+
+**Admin Features:**
+- 🔒 **Trading Guard**: Protect snipe/sell endpoints with allowlist or public mode
+- 💰 **Fee Tracking**: Record and monitor Jito tips, bot profits, etc.
+- 👥 **Allowlist Management**: Add/remove wallets in real-time
+- ⚙️ **Safety Limits**: Configure min liquidity, token age, max tax
+- 🔄 **Live Updates**: Changes take effect immediately (persist with server restart)
+
 
 ## API Endpoints
 
@@ -223,7 +338,24 @@ RATE_LIMIT_MAX=120
 - `GET /stream/trades?token=MINT` - WebSocket live trades
 
 ### Trading
-- `POST /snipe/intent` - Create snipe intent
+- `POST /snipe/intent` - Create snipe intent (protected by trading guard)
+- `POST /sell/intent` - Create sell intent (protected by trading guard)
+
+### Admin (Protected)
+All admin endpoints require `x-admin-token` header.
+
+**Trading Control:**
+- `GET /admin/trading/config` - Get current configuration
+- `POST /admin/trading/toggle` - Toggle public/closed beta mode
+- `POST /admin/trading/wallets/add` - Add wallet to allowlist
+- `POST /admin/trading/wallets/remove` - Remove wallet from allowlist
+- `POST /admin/trading/limits` - Update safety limits
+
+**Fee Tracking:**
+- `POST /admin/fees/record` - Record fee event
+- `GET /admin/fees/events` - Query fee history
+- `GET /admin/fees/stats?period=24h` - Get aggregated stats (24h/7d/30d)
+- `DELETE /admin/fees/events` - Clear all events
 
 ## Architecture
 

@@ -1,0 +1,19 @@
+🔧 dotenv.config() result: SUCCESS
+🔧 Current working directory: /Users/kaidengiles/Downloads/solana_full_trading_system/backend-node
+🔧 Raw FEE_WALLET from process.env: 'FaciyzhG9zvki2uRxUfrhghGnv2aFBHibsSnRHoeqd9y'
+🔧 About to load fee configuration...
+🔧 loadFeeConfig() function entered
+🔍 Raw env FEE_WALLET='FaciyzhG9zvki2uRxUfrhghGnv2aFBHibsSnRHoeqd9y' FEE_PERCENTAGE='1.0'
+🔍 Full process.env.FEE_WALLET: 'FaciyzhG9zvki2uRxUfrhghGnv2aFBHibsSnRHoeqd9y'
+💰 Fee collection enabled: Faci...qd9y (1%)
+✅ Fee configuration loaded successfully
+✅ XME routes registered
+📡 Dev trades WebSocket initialized
+📡 WebSocket server initialized with dev trades
+🚀 DCK$ TOOLS Node backend listening on port 3001
+🌐 CORS: *
+📊 Trade ingest: OFF
+👛 Wallet ingest: OFF
+📡 Trade loop stopped (no clients)
+GET / 200 44 - 50.899 ms
+GET /admin/fees 500 49 - 6.937 ms

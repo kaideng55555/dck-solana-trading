@@ -64,3 +64,6 @@ jobs:
       - name: Test backend-python
         working-directory: backend-python
         run: pytest || echo "No tests found"
+
+env:
+  VITE_BIRDEYE_API_KEY: your-actual-key
