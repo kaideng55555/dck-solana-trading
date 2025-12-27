@@ -1,145 +1,208 @@
+import dotenv from 'dotenv';
+// Load environment variables as early as possible
+const dotenvResult = dotenv.config();
+console.log('🔧 dotenv.config() result:', dotenvResult.error ? `ERROR: ${dotenvResult.error}` : 'SUCCESS');
+console.log('🔧 Current working directory:', process.cwd());
+console.log('🔧 Raw FEE_WALLET from process.env:', process.env.FEE_WALLET ? `'${process.env.FEE_WALLET}'` : 'UNDEFINED');
+
+// Global error handlers to prevent process exit
+process.on('uncaughtException', (error) => {
+  console.error('🚨 Uncaught Exception:', error);
+  // Don't exit in development
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit in development
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+});
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import * as Sentry from '@sentry/node';
 import { WebSocketServer } from 'ws';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection } from '@solana/web3.js';
+import { registerHealthRoutes } from './routes/health.js';
+import { registerMetricsRoutes } from './routes/metrics.js';
+import { registerStreamRoutes, initDevTrades } from './routes/stream.js';
+import { registerFeeSuggestRoutes } from './routes/fees.js';
+import { registerStatusRoutes } from './routes/status.js';
+import { registerJitoRoutes } from './routes/jito.js';
+import { registerSnipeRoutes } from './routes/snipe.js';
+// import { registerLaunchRoutes } from './routes/launch.js'; // Temporarily disabled - needs Metaplex v3 API update
+import { registerLockLPRoutes } from './routes/lock-lp.js';
+// import { registerTokenRoutes } from './routes/token.js'; // Temporarily disabled - needs analyzers module
+import { registerPriceRoutes } from './routes/price.js';
+import { registerChainRoutes } from './routes/chain.js';
+// import { registerNftRoutes } from './routes/nft.js'; // Temporarily disabled - needs Metaplex v3 API update
+import { registerWalletRoutes } from './routes/wallet.js';
+import { registerSocialRoutes } from './routes/social.js';
+import { registerDevSocialRoutes } from './routes/devSocial.js';
+import { registerRiskRoutes } from './routes/risk.js';
+import { registerPresetsRoutes } from './routes/presets.js';
+import { registerAdminFeesRoutes } from './routes/feesAdmin.js';
+import { registerAdminTradingRoutes } from './routes/adminTrading.js';
+import { registerAdminConfigRoutes } from './routes/adminConfig.js';
+import { registerXmeRoutes } from './routes/xme.js';
+import { tradingGuard, riskGuard } from './middleware/tradingGuard.js';
+import { loadRuntimeConfig } from './lib/runtimeConfig.js';
+import { loadFeeConfig } from './lib/feeConfig.js';
+import { startOnchainTradeIngest } from './ingest/onchainTrades.js';
+import { startOnchainWalletIngest } from './ingest/onchainWallet.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// QuickNode Solana connection
+// Sentry init
+app.set('trust proxy', 1);
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.1),
+    integrations: [Sentry.expressIntegration()]
+  });
+}
+
+// Security & logging
+app.use(cors({ 
+  origin: (process.env.ALLOWED_ORIGINS || '').split(','), 
+  credentials: true 
+}));
+app.use(helmet());
+app.use(morgan('tiny'));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.static('public'));
+
+// Load runtime configuration
+loadRuntimeConfig();
+
+const limiter = rateLimit({
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 60000),
+  max: Number(process.env.RATE_LIMIT_MAX || 120)
+});
+app.use(limiter);
+
+// Load fee configuration with execution verification
+console.log('🔧 About to load fee configuration...');
+try {
+  loadFeeConfig();
+  console.log('✅ Fee configuration loaded successfully');
+} catch (error) {
+  console.error('❌ Fee configuration failed:', error);
+}
+
+// Solana connection
 const connection = new Connection(
-  process.env.RPC_URL || 'https://api.mainnet-beta.solana.com',
+  process.env.RPC_HTTP || process.env.RPC_URL || 'https://api.mainnet-beta.solana.com',
   'confirmed'
 );
-
-// QuickNode WebSocket URL for real-time subscriptions
-const QUICKNODE_WS_URL = process.env.QUICKNODE_WS_URL || 
-  process.env.RPC_URL?.replace('https://', 'wss://') || 
-  'wss://api.mainnet-beta.solana.com';
-
-app.use(cors());
-app.use(express.json());
 
 // Basic health check
 app.get('/', (_, res) => {
   res.json({ status: 'DCK$ TOOLS Node backend running' });
 });
 
-// Real price endpoint - connects to Solana for actual token prices
-app.get('/price/:tokenAddress', async (req, res) => {
-  const { tokenAddress } = req.params;
-  
-  try {
-    // TODO: implement real price fetch using Jupiter aggregator or DEX APIs
-    // For now, fetch from DEXScreener
-    const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`);
-    const data = await response.json() as any;
-    
-    if (data.pairs && data.pairs.length > 0) {
-      const pair = data.pairs[0];
-      res.json({
-        token: tokenAddress,
-        price: parseFloat(pair.priceUsd),
-        marketCap: parseFloat(pair.marketCap),
-        volume24h: parseFloat(pair.volume24h),
-        change24h: parseFloat(pair.priceChange24h)
-      });
-    } else {
-      res.json({ token: tokenAddress, price: 0, error: 'Token not found' });
-    }
-  } catch (error) {
-    console.error('Error fetching price:', error);
-    res.status(500).json({ error: 'Failed to fetch price' });
-  }
-});
+// Register all routes with error handling
+try {
+  console.log('🔧 Registering routes...');
+  registerHealthRoutes(app);
+  registerMetricsRoutes(app);
+  registerStatusRoutes(app);
+  registerStreamRoutes(app);
+  registerFeeSuggestRoutes(app);
+  registerJitoRoutes(app);
 
-// Token info endpoint - real Solana token data
-app.get('/token/:tokenAddress', async (req, res) => {
-  const { tokenAddress } = req.params;
-  
-  try {
-    const mintPubkey = new PublicKey(tokenAddress);
-    const tokenSupply = await connection.getTokenSupply(mintPubkey);
-    
-    res.json({
-      token: tokenAddress,
-      supply: tokenSupply.value.uiAmount,
-      decimals: tokenSupply.value.decimals
-    });
-  } catch (error) {
-    console.error('Error fetching token info:', error);
-    res.status(500).json({ error: 'Failed to fetch token info' });
-  }
-});
+  // Admin routes
+  registerAdminConfigRoutes(app);
+  registerAdminFeesRoutes(app);
+  registerAdminTradingRoutes(app);
 
-// Bonding curve progress endpoint
-app.get('/bonding-curve/:tokenAddress', async (req, res) => {
-  const { tokenAddress } = req.params;
-  
-  try {
-    // TODO: Implement real bonding curve progress calculation
-    // This would query the pump.fun program account data
-    
-    // For now, return mock progress based on market cap
-    const priceResponse = await fetch(`http://localhost:${PORT}/price/${tokenAddress}`);
-    const priceData = await priceResponse.json() as any;
-    
-    const marketCap = priceData.marketCap || 0;
-    let progress = 0;
-    
-    if (marketCap > 150000) progress = 1.0; // Graduated
-    else if (marketCap > 30000) progress = 0.7; // About to graduate
-    else progress = marketCap / 100000; // New token progress
-    
-    res.json({
-      token: tokenAddress,
-      progress: Math.min(progress, 1.0),
-      marketCap,
-      stage: progress >= 1.0 ? 'graduated' : progress > 0.4 ? 'graduating' : 'new'
-    });
-  } catch (error) {
-    console.error('Error calculating bonding curve:', error);
-    res.status(500).json({ error: 'Failed to calculate bonding curve' });
-  }
-});
+  // XME (Expanded Mind Engine) routes
+  registerXmeRoutes(app);
+  console.log('✅ Core routes registered successfully');
+} catch (error) {
+  console.error('❌ Route registration failed:', error);
+  throw error;
+}
+
+// Trading routes with combined guards (trading + risk)
+try {
+  console.log('🔧 Registering trading and auxiliary routes...');
+  registerSnipeRoutes(app, [tradingGuard, riskGuard]);
+
+  // Other routes
+  // registerLaunchRoutes(app); // Temporarily disabled - needs Metaplex v3 API update
+  registerLockLPRoutes(app);
+  // registerTokenRoutes(app); // Temporarily disabled - needs analyzers module
+  registerPriceRoutes(app);
+  registerChainRoutes(app);
+  // registerNftRoutes(app); // Temporarily disabled - needs Metaplex v3 API update
+  registerWalletRoutes(app);
+  registerSocialRoutes(app);
+  registerDevSocialRoutes(app);
+  registerRiskRoutes(app);
+  registerPresetsRoutes(app);
+  console.log('✅ All auxiliary routes registered successfully');
+} catch (error) {
+  console.error('❌ Auxiliary route registration failed:', error);
+  // Don't throw here, allow server to start with core routes
+}
+
+// Sentry error handler
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.expressErrorHandler());
+}
+
+// Start ingest if enabled
+if (process.env.TRADE_INGEST === 'on' && (process.env.RPC_HTTP || process.env.QUICKNODE_RPC)) {
+  console.log('🔄 Starting onchain trade ingest...');
+  startOnchainTradeIngest(connection);
+}
+
+if (process.env.WALLET_INGEST === 'on' && (process.env.RPC_HTTP || process.env.QUICKNODE_RPC)) {
+  console.log('🔄 Starting onchain wallet ingest...');
+  startOnchainWalletIngest(connection);
+}
 
 const server = app.listen(PORT, () => {
   console.log(`🚀 DCK$ TOOLS Node backend listening on port ${PORT}`);
+  console.log(`🌐 CORS: ${process.env.ALLOWED_ORIGINS || '*'}`);
+  console.log(`📊 Trade ingest: ${process.env.TRADE_INGEST === 'on' ? 'ENABLED' : 'OFF'}`);
+  console.log(`👛 Wallet ingest: ${process.env.WALLET_INGEST === 'on' ? 'ENABLED' : 'OFF'}`);
 });
 
-// WebSocket server for real-time data
-const wss = new WebSocketServer({ server });
-
-wss.on('connection', (ws) => {
-  console.log('📡 New WebSocket connection established');
+// WebSocket server for real-time trade updates
+try {
+  const wss = new WebSocketServer({ server });
+  initDevTrades(wss);
+  console.log('📡 WebSocket server initialized with dev trades');
   
-  ws.on('message', (message) => {
-    try {
-      const data = JSON.parse(message.toString());
-      
-      if (data.type === 'subscribe') {
-        console.log(`🔔 Client subscribed to: ${data.tokens?.join(', ')}`);
-        
-        // TODO: Set up real-time token price monitoring
-        // This would subscribe to DEX APIs or Solana account changes
-        
-        ws.send(JSON.stringify({
-          type: 'subscription_confirmed',
-          tokens: data.tokens
-        }));
-      }
-    } catch (error) {
-      console.error('WebSocket message error:', error);
-    }
+  // Graceful shutdown handling
+  process.on('SIGTERM', () => {
+    console.log('🛑 Received SIGTERM, shutting down gracefully');
+    wss.close();
+    server.close(() => {
+      process.exit(0);
+    });
   });
   
-  ws.on('close', () => {
-    console.log('📡 WebSocket connection closed');
+  process.on('SIGINT', () => {
+    console.log('🛑 Received SIGINT, shutting down gracefully');
+    wss.close();
+    server.close(() => {
+      process.exit(0);
+    });
   });
-  
-  // Send initial connection message
-  ws.send(JSON.stringify({
-    type: 'connected',
-    message: 'Connected to DCK$ TOOLS real-time data feed'
-  }));
-});
+} catch (error) {
+  console.error('❌ WebSocket initialization failed:', error);
+  // Continue without WebSocket if it fails
+}

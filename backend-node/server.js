@@ -89,7 +89,7 @@ async function emitFromSignature(signature, slot) {
         // Fallback if mint not found immediately
         broadcast({ type:'mint', signature, slot, ts:Date.now() })
     }
-  } catch (e) {
+  } catch (err) {
     broadcast({ type:'mint', signature, slot, ts:Date.now() })
   }
 }

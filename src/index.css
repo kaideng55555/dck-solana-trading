@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #0b0e12;
+    --bg-elev: #121721;
+    --fg: #e6f0ff;
+    --muted: #94a3b8;
+    --border: #263043;
+    --accent: #40e0ff;
+    --accent-2: #ec4899;
+  }
+
+  html, body, #root { height: 100%; background: var(--bg); color: var(--fg); }
+}
+
+@layer components {
+  .card { @apply rounded-2xl border p-3; border-color: var(--border); background-color: color-mix(in oklab, var(--bg) 85%, #fff 0%); }
+  .btn { @apply rounded-xl px-3 py-2 font-medium border; border-color: var(--border); background: color-mix(in oklab, var(--bg) 75%, var(--accent) 10%); }
+  .btn:hover { box-shadow: 0 0 16px color-mix(in oklab, var(--accent) 30%, #000 70%); }
+  .neon-title { text-shadow: 0 0 18px color-mix(in oklab, var(--accent) 45%, #000 55%); }
+  .neon-grid {
+    background-image:
+      radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--accent) 25%, transparent) 1px, transparent 0),
+      radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--accent-2) 18%, transparent) 1px, transparent 0);
+    background-size: 24px 24px, 40px 40px;
+  }
+}
+
+@layer utilities {
+  .bg-bg { background-color: var(--bg); }
+  .bg-bg-elev { background-color: var(--bg-elev); }
+  .text-fg { color: var(--fg); }
+  .text-muted { color: var(--muted); }
+  .border-token { border-color: var(--border); }
+}

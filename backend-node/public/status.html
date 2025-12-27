@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DCK$ API Status</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%);
+      color: #00ff88;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      width: 100%;
+      padding: 2rem;
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid #00ff88;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 20px #00ff88;
+      text-align: center;
+    }
+    .subtitle {
+      text-align: center;
+      color: #ff00ff;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .status-card {
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid #00ff88;
+      border-radius: 6px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .status-card h3 {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      color: #00ffff;
+    }
+    .status-value {
+      font-size: 1.2rem;
+      color: #00ff88;
+    }
+    .status-value.loading { color: #888; }
+    .status-value.error { color: #ff4444; }
+    .pulse {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      background: #00ff88;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .endpoints {
+      margin-top: 2rem;
+      text-align: left;
+    }
+    .endpoints h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: #ff00ff;
+    }
+    .endpoint-list {
+      display: grid;
+      gap: 0.5rem;
+    }
+    .endpoints a {
+      color: #00ffff;
+      text-decoration: none;
+      display: block;
+      padding: 0.5rem;
+      background: rgba(0, 255, 255, 0.1);
+      border-left: 3px solid #00ffff;
+      transition: all 0.2s;
+    }
+    .endpoints a:hover {
+      color: #ff00ff;
+      border-left-color: #ff00ff;
+      background: rgba(255, 0, 255, 0.1);
+      transform: translateX(5px);
+    }
+    code {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>DCK$ API</h1>
+    <div class="subtitle">Solana Trading System</div>
+    
+    <div class="status-grid">
+      <div class="status-card">
+        <h3>STATUS</h3>
+        <div class="status-value" id="status">
+          <span class="pulse"></span>CHECKING...
+        </div>
+      </div>
+      <div class="status-card">
+        <h3>UPTIME</h3>
+        <div class="status-value loading" id="uptime">...</div>
+      </div>
+      <div class="status-card">
+        <h3>RPC</h3>
+        <div class="status-value loading" id="rpc">...</div>
+      </div>
+      <div class="status-card">
+        <h3>MODE</h3>
+        <div class="status-value loading" id="mode">...</div>
+      </div>
+    </div>
+    
+    <div class="endpoints">
+      <h2>Public Endpoints</h2>
+      <div class="endpoint-list">
+        <a href="/healthz" target="_blank">→ <code>GET /healthz</code> - Health check</a>
+        <a href="/readyz" target="_blank">→ <code>GET /readyz</code> - Readiness check</a>
+        <a href="/xme/tokens?limit=10" target="_blank">→ <code>GET /xme/tokens</code> - Token explorer</a>
+        <a href="/risk/So11111111111111111111111111111111111111112" target="_blank">→ <code>GET /risk/:mint</code> - Risk scoring</a>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    async function updateStatus() {
+      try {
+        const health = await fetch('/healthz').then(r => r.json());
+        const ready = await fetch('/readyz').then(r => r.json());
+        
+        if (health.ok && ready.ok) {
+          document.getElementById('status').innerHTML = '<span class="pulse"></span>ONLINE';
+          document.getElementById('status').classList.remove('error');
+        } else {
+          document.getElementById('status').innerHTML = 'DEGRADED';
+          document.getElementById('status').classList.add('error');
+        }
+        
+        document.getElementById('uptime').textContent = 
+          health.uptime ? `${Math.floor(health.uptime / 60)}m` : 'N/A';
+        document.getElementById('rpc').textContent = 
+          health.rpc ? 'CONNECTED' : 'LOCAL';
+        document.getElementById('mode').textContent = 
+          'LIVE';
+        
+      } catch (e) {
+        document.getElementById('status').innerHTML = 'OFFLINE';
+        document.getElementById('status').classList.add('error');
+        document.getElementById('uptime').textContent = 'N/A';
+        document.getElementById('rpc').textContent = 'N/A';
+        document.getElementById('mode').textContent = 'ERROR';
+      }
+    }
+    
+    updateStatus();
+    setInterval(updateStatus, 30000); // Refresh every 30s
+  </script>
+</body>
+</html>

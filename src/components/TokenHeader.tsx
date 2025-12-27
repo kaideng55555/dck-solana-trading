@@ -1,0 +1,1 @@
+import React from 'react'; export default function TokenHeader({children}: any){ return <div className="card p-3 flex items-center justify-between"><div>Header</div><div>{children}</div></div>; }

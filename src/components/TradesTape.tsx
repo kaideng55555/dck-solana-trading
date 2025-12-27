@@ -1,0 +1,1 @@
+import React from 'react'; export default function TradesTape(){ return <div className="text-muted text-sm">Tape</div>; }

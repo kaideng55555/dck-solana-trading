@@ -1,0 +1,1 @@
+import { useEffect, useState } from 'react'; export function useTokenData(mint: string){ const [token,setToken]=useState<any>(null); const [loading,setLoading]=useState(false); useEffect(()=>{ if(!mint) return; setLoading(true); fetch(`/api/token/${mint}`).then(r=>r.json()).then(setToken).finally(()=>setLoading(false)); },[mint]); return { token, loading, refresh: ()=>{} }; }

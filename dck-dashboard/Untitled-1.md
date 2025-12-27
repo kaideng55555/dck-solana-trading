@@ -1,0 +1,1 @@
+VITE_QUICKNODE_HTTP=https://solana-mainnet.quiknode.pro/your-actual-key

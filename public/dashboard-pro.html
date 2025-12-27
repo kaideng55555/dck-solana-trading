@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DCK$ TOOLS – Hyper Vision Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg: #0a0a12;
+      --panel: #12121a;
+      --card: #1a1a24;
+      --border: #2a2a3a;
+      --cyan: #00ffff;
+      --pink: #ff00ff;
+      --green: #00ff80;
+      --red: #ff4060;
+      --yellow: #ffcc00;
+      --text: #ffffff;
+      --muted: #888899;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Slide-out Sidebar */
+    .sidebar {
+      position: fixed;
+      left: -280px;
+      top: 0;
+      width: 280px;
+      height: 100vh;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      z-index: 1000;
+      transition: left 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar.open { left: 0; }
+
+    .sidebar-toggle {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 80px;
+      background: linear-gradient(180deg, var(--cyan), var(--pink));
+      border: none;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: left 0.3s ease;
+    }
+
+    .sidebar.open + .sidebar-toggle { left: 280px; }
+
+    .sidebar-toggle::after {
+      content: '›';
+      color: #000;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .sidebar.open + .sidebar-toggle::after { content: '‹'; }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo {
+      font-size: 24px;
+      font-weight: 900;
+      background: linear-gradient(90deg, var(--cyan), var(--pink));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover { background: var(--card); }
+    .nav-item.active { 
+      background: linear-gradient(90deg, rgba(0,255,255,0.2), rgba(255,0,255,0.2));
+      border: 1px solid var(--cyan);
+    }
+
+    .nav-icon { font-size: 18px; }
+
+    /* Top Header Bar */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 100;
+      gap: 16px;
+    }
+
+    .header-title {
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--cyan), var(--pink));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-tabs {
+      display: flex;
+      gap: 8px;
+      margin-left: 20px;
+    }
+
+    .header-tab {
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .header-tab:hover { border-color: var(--cyan); }
+    .header-tab.active { 
+      background: linear-gradient(90deg, var(--cyan), var(--pink));
+      color: #000;
+      border-color: transparent;
+    }
+
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text);
+      width: 200px;
+    }
+
+    .connect-btn {
+      background: linear-gradient(90deg, var(--cyan), var(--pink));
+      border: none;
+      padding: 8px 20px;
+      border-radius: 8px;
+      color: #000;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Main Content */
+    .main {
+      margin-top: 50px;
+      padding: 20px;
+    }
+
+    /* Three Column Grid */
+    .columns-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 1200px) {
+      .columns-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 800px) {
+      .columns-grid { grid-template-columns: 1fr; }
+    }
+
+    .column {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .column-title {
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .column-title.new { color: var(--cyan); }
+    .column-title.graduating { color: var(--yellow); }
+    .column-title.graduated { color: var(--green); }
+
+    .filter-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .column-body {
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+
+    /* Token Card */
+    .token-card {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .token-card:hover { background: var(--card); }
+
+    .token-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--cyan), var(--pink));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .token-info { flex: 1; min-width: 0; }
+
+    .token-name {
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .token-meta {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .token-stats {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .token-mcap {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .token-change {
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .token-change.up { color: var(--green); }
+    .token-change.down { color: var(--red); }
+
+    .badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .badge-dev { background: rgba(0,255,255,0.2); color: var(--cyan); }
+    .badge-verified { background: rgba(0,255,128,0.2); color: var(--green); }
+
+    .mini-chart {
+      width: 60px;
+      height: 30px;
+      background: var(--card);
+      border-radius: 4px;
+    }
+
+    /* Status indicators */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .status-dot.pending { background: var(--yellow); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--panel); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .loading { animation: pulse 1.5s infinite; }
+
+    /* Chart container in sidebar */
+    .sidebar-chart {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .chart-placeholder {
+      height: 120px;
+      background: var(--card);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Slide-out Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">⚡ DCK$ TOOLS</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-tab="trading">
+        <span class="nav-icon">📊</span>
+        <span>Trading</span>
+      </div>
+      <div class="nav-item" data-tab="create">
+        <span class="nav-icon">🪙</span>
+        <span>Create Token</span>
+      </div>
+      <div class="nav-item" data-tab="analytics">
+        <span class="nav-icon">📈</span>
+        <span>Analytics</span>
+      </div>
+      <div class="nav-item" data-tab="sniper">
+        <span class="nav-icon">🎯</span>
+        <span>Sniper Bot</span>
+      </div>
+      <div class="nav-item" data-tab="nfts">
+        <span class="nav-icon">🖼️</span>
+        <span>NFTs</span>
+      </div>
+      <div class="nav-item" data-tab="capsule">
+        <span class="nav-icon">💊</span>
+        <span>Capsule</span>
+      </div>
+      <div class="nav-item" data-tab="fees">
+        <span class="nav-icon">💰</span>
+        <span>Fee Tracker</span>
+      </div>
+      <div class="nav-item" data-tab="settings">
+        <span class="nav-icon">⚙️</span>
+        <span>Settings</span>
+      </div>
+    </nav>
+    <div class="sidebar-chart">
+      <div class="chart-placeholder">
+        <span class="status-dot live"></span>&nbsp; Live Feed Active
+      </div>
+    </div>
+  </aside>
+  <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar" aria-label="Toggle Sidebar">☰</button>
+
+  <!-- Top Header -->
+  <header class="header">
+    <span class="header-title">Hyper Vision</span>
+    <div class="header-tabs">
+      <div class="header-tab active">🔮 AI Chain</div>
+      <div class="header-tab">☀️ SOL</div>
+      <div class="header-tab">🌙 TRON</div>
+    </div>
+    <div class="header-right">
+      <input type="text" class="search-box" placeholder="🔍 Search tokens..." id="searchBox">
+      <button class="connect-btn" id="connectWallet">🔗 Connect</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <div class="columns-grid">
+      
+      <!-- New Creations Column -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-title new">
+            <span class="status-dot live"></span>
+            New Creations
+          </div>
+          <button class="filter-btn">≡ Filter</button>
+        </div>
+        <div class="column-body" id="newCreations">
+          <!-- Tokens will be injected here -->
+        </div>
+      </div>
+
+      <!-- About to Graduate Column -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-title graduating">
+            🎓 About to Graduate
+          </div>
+          <button class="filter-btn">≡ Filter</button>
+        </div>
+        <div class="column-body" id="graduating">
+          <!-- Tokens will be injected here -->
+        </div>
+      </div>
+
+      <!-- Graduated Column -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-title graduated">
+            ✅ Graduated
+          </div>
+          <button class="filter-btn">≡ Filter</button>
+        </div>
+        <div class="column-body" id="graduated">
+          <!-- Tokens will be injected here -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // Sidebar Toggle
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+
+    // Nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        console.log('Navigate to:', item.dataset.tab);
+      });
+    });
+
+    // Generate random token data
+    function randomAddress() {
+      const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+      return Array.from({length: 44}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
+
+    function randomToken() {
+      const names = ['NATTY', 'GGLS', 'SERASH', 'Honchi', 'Trustless', 'LOL2', 'Amanda', 'PUPPY', 'ImagmY', 'CancelCards', 'SEXERA', 'CRATE', 'SHORTOUY', 'Rizuma', 'Gambie', 'VICY TOORY', 'Sinwas', 'TmDU', 'PRCA TAC', 'ANYWHERE', 'Dap boy', 'PDZIANFIL', 'NOWTIGGER', 'Babyillix', 'haopity'];
+      const suffixes = ['Coin', 'Token', '', 'DAO', 'Fi', 'X'];
+      const emojis = ['🐶', '🚀', '💎', '🔥', '🌙', '⭐', '🎮', '💰', '🦊', '🐸'];
+      
+      const name = names[Math.floor(Math.random() * names.length)];
+      const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+      
+      return {
+        name: name + (suffix ? ' ' + suffix : ''),
+        symbol: name.slice(0, 4).toUpperCase(),
+        emoji: emojis[Math.floor(Math.random() * emojis.length)],
+        address: randomAddress(),
+        mcap: (Math.random() * 100).toFixed(1) + 'K',
+        age: Math.floor(Math.random() * 24) + 'h',
+        change: (Math.random() * 20 - 10).toFixed(1),
+        holders: Math.floor(Math.random() * 1000),
+        devHolding: Math.floor(Math.random() * 10),
+        isVerified: Math.random() > 0.7
+      };
+    }
+
+    function createTokenCard(token) {
+      const isUp = parseFloat(token.change) >= 0;
+      return `
+        <div class="token-card" data-address="${token.address}">
+          <div class="token-avatar">${token.emoji}</div>
+          <div class="token-info">
+            <div class="token-name">
+              ${token.name}
+              ${token.isVerified ? '<span class="badge badge-verified">✓</span>' : ''}
+            </div>
+            <div class="token-meta">
+              <span>📊 ${token.holders}</span>
+              <span>🔒 ${token.devHolding}%</span>
+              <span>⏱️ ${token.age}</span>
+            </div>
+          </div>
+          <div class="token-stats">
+            <div class="token-mcap">$${token.mcap}</div>
+            <div class="token-change ${isUp ? 'up' : 'down'}">
+              ${isUp ? '↑' : '↓'} ${Math.abs(token.change)}%
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Populate columns
+    function populateColumn(containerId, count) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        container.innerHTML += createTokenCard(randomToken());
+      }
+    }
+
+    // Initial load
+    populateColumn('newCreations', 12);
+    populateColumn('graduating', 10);
+    populateColumn('graduated', 10);
+
+    // Live updates simulation
+    setInterval(() => {
+      const containers = ['newCreations', 'graduating', 'graduated'];
+      const container = document.getElementById(containers[Math.floor(Math.random() * containers.length)]);
+      const newCard = createTokenCard(randomToken());
+      container.insertAdjacentHTML('afterbegin', newCard);
+      
+      // Remove last if too many
+      if (container.children.length > 15) {
+        container.lastElementChild.remove();
+      }
+    }, 3000);
+
+    // Search functionality
+    document.getElementById('searchBox').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      document.querySelectorAll('.token-card').forEach(card => {
+        const name = card.querySelector('.token-name').textContent.toLowerCase();
+        card.style.display = name.includes(query) ? 'flex' : 'none';
+      });
+    });
+
+    // Connect wallet button
+    document.getElementById('connectWallet').addEventListener('click', () => {
+      alert('Wallet connection coming soon! 🚀');
+    });
+
+    // Token card click
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('.token-card');
+      if (card) {
+        const address = card.dataset.address;
+        console.log('Selected token:', address);
+        // Could open a modal or navigate to detail view
+      }
+    });
+  </script>
+</body>
+</html>

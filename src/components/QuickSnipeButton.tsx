@@ -1,0 +1,1 @@
+import React from 'react'; export default function QuickSnipeButton(){ return <button className="btn">Quick Snipe</button>; }

@@ -1,0 +1,2 @@
+import * as Sentry from '@sentry/react';
+export function initSentry(){ const dsn=(import.meta as any).env?.VITE_SENTRY_DSN; if(!dsn) return; Sentry.init({ dsn, integrations:[new Sentry.BrowserTracing()], tracesSampleRate:Number((import.meta as any).env?.VITE_SENTRY_TRACES_SAMPLE_RATE ?? 0.1) }); }

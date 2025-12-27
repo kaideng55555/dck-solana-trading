@@ -1,0 +1,56 @@
+/* src/styles/neon.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Neon palette (blue + pink) */
+:root{
+  --ink: 10 13 18;
+  --panel: 15 20 32;
+  --neon-pink: 255 28 247;
+  --neon-blue: 0 229 255;
+}
+
+/* === Animations from user === */
+@keyframes neonPulse {
+  0% { box-shadow: 0 0 0px rgba(255,0,128,0.3); }
+  50% { box-shadow: 0 0 16px rgba(255,0,128,0.9); }
+  100% { box-shadow: 0 0 0px rgba(255,0,128,0.3); }
+}
+.animate-neon { animation: neonPulse 2.6s infinite ease-in-out; }
+
+@keyframes pcbFlow {
+  0% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.70; transform: scale(1.02); }
+  100% { opacity: 0.45; transform: scale(1); }
+}
+.animate-pcb { animation: pcbFlow 8s infinite linear; }
+
+@keyframes fadeSlide {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0px); }
+}
+.animate-page { animation: fadeSlide 0.6s ease-out; }
+
+/* Buttons / cards helpers */
+.neon-button:hover { box-shadow: 0 0 14px rgba(0,140,255,0.9); }
+
+.card-neon {
+  /* base neon card look */
+  border: 1px solid rgba(var(--neon-pink), 0.4);
+  border-radius: 16px;
+  background: rgba(0,0,0,0.7);
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.card-neon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255,0,128,0.8);
+  border-color: rgba(var(--neon-pink), 0.6);
+}
+
+/* Optional global focus ring */
+:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(var(--neon-blue), .9), 0 0 18px rgba(var(--neon-pink), .6);
+  border-radius: .75rem;
+}
